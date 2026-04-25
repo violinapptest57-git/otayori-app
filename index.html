@@ -789,18 +789,28 @@ async function sendChat(){
   parts.push({text:sys+(q?'\n質問：'+q:'\nこの画像のプリントを読み取って内容を教えてください。')});
 
   try{
-    if(!key)throw new Error('no key');
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts}]})
-    });
+    if(!key){document.getElementById('typing')?.remove();addMsg('設定タブでAPIキーを設定してください。','ai');return;}
+    const apiUrl='https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key;
+    const body=JSON.stringify({contents:[{parts:parts}]});
+    const res=await fetch(apiUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:body});
+    if(!res.ok){
+      const errText=await res.text();
+      console.error('Gemini API error:',res.status,errText);
+      document.getElementById('typing')?.remove();
+      if(res.status===400)addMsg('APIキーが無効です。設定タブで正しいキーを入力してください。','ai');
+      else if(res.status===403)addMsg('APIキーの権限がありません。Google AI Studioで有効化してください。','ai');
+      else addMsg('APIエラー('+res.status+')が発生しました。しばらくしてから再試行してください。','ai');
+      return;
+    }
     const data=await res.json();
-    const reply=data.candidates?.[0]?.content?.parts?.[0]?.text||'うまく読み取れませんでした。';
+    const reply=(data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('');
     document.getElementById('typing')?.remove();
+    if(!reply.trim()){addMsg('読み取り結果が空でした。もう一度写真を送ってください。','ai');return;}
     addMsg(reply,'ai');
   }catch(e){
+    console.error('fetch error:',e);
     document.getElementById('typing')?.remove();
-    addMsg(fallback(q),'ai');
+    addMsg('通信エラーが発生しました。インターネット接続を確認してください。','ai');
   }
 }
 
