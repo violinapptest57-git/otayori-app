@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1A1917">
+<!-- PWA: Galaxyギャラリーの「共有」から受け取る -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>おたより管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F0EB;--sur:#FFFFFF;--sur2:#ECEAE5;--sur3:#DEDAD3;
+  --ink:#1A1917;--ink2:#5C5955;--ink3:#9C9890;
+  --acc:#2D4AF0;--accl:#E8ECFF;--accd:#1E36D4;
+  --grn:#0F6E50;--grnl:#E0F2EA;
+  --amb:#8B5000;--ambl:#FEF0D6;
+  --red:#A02828;--redl:#FCEAEA;
+  --tel:#0C6E7A;--tell:#E0F4F7;
+  --r:14px;--rsm:9px;--rful:999px;
+  --sh:0 1px 4px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Noto Sans JP',sans-serif;color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+.app{display:flex;flex-direction:column;height:100vh;max-width:430px;margin:0 auto;background:var(--bg);position:relative;overflow:hidden}
+.header{background:var(--sur);padding:12px 16px 10px;border-bottom:.5px solid var(--sur3);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.htitle{font-size:17px;font-weight:700;letter-spacing:-.5px}
+.hbadge{background:var(--accl);color:var(--acc);font-size:10px;font-weight:700;padding:3px 9px;border-radius:var(--rful)}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.section{display:none;padding:14px}.section.active{display:block}
+.nav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--sur);border-top:.5px solid var(--sur3);padding-bottom:env(safe-area-inset-bottom,4px);flex-shrink:0}
+.nbtn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 2px 10px;font-size:9px;color:var(--ink3);border:none;background:none;cursor:pointer;font-family:inherit;transition:color .15s}
+.nbtn svg{width:22px;height:22px}
+.nbtn.active{color:var(--acc)}
+.card{background:var(--sur);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.csm{background:var(--sur);border-radius:var(--rsm);padding:11px 13px;margin-bottom:7px;box-shadow:var(--sh);cursor:pointer;transition:transform .15s}
+.csm:active{transform:scale(.985)}
+.slabel{font-size:10px;font-weight:700;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.tag{font-size:10px;padding:2px 7px;border-radius:var(--rful);font-weight:700;display:inline-block}
+.tag-event{background:var(--accl);color:var(--acc)}
+.tag-deadline{background:var(--redl);color:var(--red)}
+.tag-payment{background:var(--ambl);color:var(--amb)}
+.tag-notice{background:#E6F0FC;color:#1A5FA5}
+.tag-schedule{background:var(--tell);color:var(--tel)}
+.trow{display:flex;gap:4px;flex-wrap:wrap}
+/* today card */
+.tcard{background:linear-gradient(135deg,#2D4AF0,#1E36D4);border-radius:var(--r);padding:16px;margin-bottom:12px;color:white;box-shadow:0 4px 16px rgba(45,74,240,.3)}
+.tdate{font-size:11px;opacity:.75;margin-bottom:6px}
+.thead2{font-size:15px;font-weight:700;margin-bottom:10px}
+.titem{background:rgba(255,255,255,.12);border-radius:8px;padding:8px 11px;font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:5px}
+.titem:last-child{margin-bottom:0}
+/* share zone — メイン登録UI */
+.share-hero{background:var(--sur);border-radius:var(--r);padding:20px 16px;margin-bottom:10px;box-shadow:var(--sh);text-align:center}
+.share-icon-wrap{width:64px;height:64px;background:var(--accl);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px}
+.share-title{font-size:15px;font-weight:700;margin-bottom:6px}
+.share-desc{font-size:12px;color:var(--ink2);line-height:1.7;margin-bottom:14px}
+.steps-mini{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;text-align:left}
+.step-mini{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink2)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--acc);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-p{width:100%;padding:14px;background:var(--acc);color:white;border:none;border-radius:var(--r);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;margin-bottom:8px}
+.btn-p:active{background:var(--accd)}
+.btn-p svg{width:18px;height:18px;flex-shrink:0}
+.btn-s{width:100%;padding:11px;background:var(--sur);color:var(--acc);border:1.5px solid var(--accl);border-radius:var(--r);font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:10px;transition:background .15s}
+.btn-s:active{background:var(--accl)}
+/* processing */
+.proc{position:fixed;inset:0;background:rgba(26,25,23,.9);z-index:500;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px}
+.proc.show{display:flex}
+.spin{width:48px;height:48px;border:3px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:sp .75s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ptitle{color:white;font-size:16px;font-weight:700}
+.psteps{width:100%;max-width:280px;display:flex;flex-direction:column;gap:6px}
+.pstep{display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:10px;font-size:12px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.4);transition:all .3s}
+.pstep.active{background:rgba(255,255,255,.18);color:white;font-weight:500}
+.pstep.done{background:rgba(15,110,80,.3);color:#6EE7B7}
+/* result panel */
+.rpanel{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:430px;background:var(--sur);border-radius:var(--r) var(--r) 0 0;max-height:88vh;overflow-y:auto;z-index:600;transition:transform .38s cubic-bezier(.34,1.15,.64,1);box-shadow:0 -4px 24px rgba(0,0,0,.15)}
+.rpanel.show{transform:translateX(-50%) translateY(0)}
+.rhandle{width:36px;height:4px;background:var(--sur3);border-radius:2px;margin:14px auto 4px}
+.rbody{padding:4px 16px 32px}
+.rok{font-size:14px;font-weight:700;color:var(--grn);display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.rsub{font-size:12px;color:var(--ink3);margin-bottom:12px}
+.sumbox{background:var(--sur2);border-radius:var(--rsm);padding:12px 13px;margin-bottom:12px;border-left:3px solid var(--acc)}
+.sumtitle{font-size:11px;font-weight:700;color:var(--acc);margin-bottom:5px;letter-spacing:.04em}
+.sumtext{font-size:12px;color:var(--ink2);line-height:1.7}
+.exlist{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.exitem{display:flex;gap:9px;align-items:flex-start;padding:10px 12px;border-radius:var(--rsm);background:var(--bg);border:.5px solid var(--sur3)}
+.exbadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--rful);white-space:nowrap;flex-shrink:0;margin-top:2px}
+.exmain{font-size:13px;font-weight:500;margin-bottom:2px}
+.exdetail{font-size:11px;color:var(--ink2);line-height:1.5}
+/* print list */
+.prow{display:flex;align-items:flex-start;gap:10px}
+.pthumb{width:42px;height:52px;border-radius:7px;background:var(--sur2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;border:.5px solid var(--sur3)}
+.pinfo{flex:1}
+.ptitletext{font-size:13px;font-weight:700;margin-bottom:3px}
+.pdate{font-size:11px;color:var(--ink3);margin-bottom:5px}
+/* search */
+.swrap{position:relative;margin-bottom:10px}
+.sinput{width:100%;padding:11px 14px 11px 40px;border:1.5px solid var(--sur3);border-radius:var(--rful);font-size:14px;font-family:inherit;background:var(--sur);color:var(--ink);outline:none;transition:border-color .15s}
+.sinput:focus{border-color:var(--acc)}
+.sicon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink3);pointer-events:none}
+.frow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.fbtn{font-size:11px;padding:5px 11px;border-radius:var(--rful);border:1.5px solid var(--sur3);background:var(--sur);color:var(--ink2);cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s}
+.fbtn.on{background:var(--acc);color:white;border-color:var(--acc)}
+/* calendar */
+.calcard{background:var(--sur);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.calmonth{font-size:15px;font-weight:700}
+.calnav{width:28px;height:28px;border:none;background:var(--sur2);border-radius:50%;cursor:pointer;color:var(--ink2);font-size:13px}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.caldow{font-size:10px;color:var(--ink3);text-align:center;padding:4px 0;font-weight:500}
+.calday{font-size:12px;padding:5px 2px;text-align:center;border-radius:6px;cursor:pointer;color:var(--ink);min-height:28px}
+.calday.today{font-weight:700;color:var(--acc);background:var(--accl)}
+.evdot{display:block;width:4px;height:4px;border-radius:50%;margin:1px auto 0}
+.evdot.event{background:var(--acc)}.evdot.deadline{background:var(--red)}
+.evitem{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:.5px solid var(--sur2)}
+.evitem:last-child{border-bottom:none}
+.evdotlg{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.evdates{font-size:11px;color:var(--ink3)}
+.evname{font-size:13px;font-weight:500}
+.gclink{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;background:var(--sur);border:.5px solid var(--sur3);border-radius:var(--rful);font-size:12px;color:var(--ink2);cursor:pointer;margin-top:10px;text-decoration:none;box-shadow:var(--sh)}
+/* chat */
+.cwrap{display:flex;flex-direction:column;height:calc(100vh - 185px)}
+.chiprow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{font-size:12px;padding:7px 12px;border-radius:var(--rful);border:1.5px solid var(--accl);background:var(--sur);color:var(--acc);cursor:pointer;font-family:inherit;font-weight:500;white-space:nowrap;transition:background .15s;box-shadow:var(--sh)}
+.chip:active{background:var(--accl)}
+.cmsgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-bottom:10px}
+.msg{max-width:88%;padding:10px 13px;border-radius:16px;font-size:13px;line-height:1.7}
+.msg.user{align-self:flex-end;background:var(--acc);color:white;border-bottom-right-radius:4px}
+.msg.ai{align-self:flex-start;background:var(--sur);color:var(--ink);border-bottom-left-radius:4px;box-shadow:var(--sh)}
+.ainame{font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:4px;letter-spacing:.05em}
+.cbot{display:flex;gap:8px;padding-top:10px;border-top:.5px solid var(--sur3);align-items:flex-end}
+.cinput{flex:1;padding:10px 13px;border:1.5px solid var(--sur3);border-radius:var(--rful);font-size:13px;font-family:inherit;color:var(--ink);background:var(--sur);outline:none;transition:border-color .15s;resize:none;max-height:80px}
+.cinput:focus{border-color:var(--acc)}
+.imgbtn{width:38px;height:38px;background:var(--sur2);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.imgbtn svg{width:18px;height:18px;color:var(--ink2)}
+.sndbtn{width:38px;height:38px;background:var(--acc);color:white;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sndbtn:active{background:var(--accd)}
+.sndbtn svg{width:17px;height:17px}
+.imgprev{position:relative;display:inline-block;margin-bottom:8px}
+.imgprev img{max-height:110px;border-radius:8px;display:block}
+.iclose{position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:var(--ink);color:white;border:none;border-radius:50%;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tdots{display:flex;gap:4px;padding:2px 0}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--ink3);animation:td 1.2s infinite}
+.tdot:nth-child(2){animation-delay:.2s}.tdot:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+/* settings */
+.srow{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:.5px solid var(--sur2)}
+.srow:last-child{border-bottom:none}
+.slbl{font-size:14px;font-weight:500}
+.ssub{font-size:11px;color:var(--ink3);margin-top:1px}
+.tog{width:44px;height:26px;background:var(--sur3);border-radius:13px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.tog.on{background:var(--acc)}
+.tog::after{content:'';position:absolute;width:20px;height:20px;background:white;border-radius:50%;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog.on::after{transform:translateX(18px)}
+.empty{text-align:center;padding:36px 16px;color:var(--ink3);font-size:13px}
+#finput{display:none}
+#cfinput{display:none}
+/* shared image preview banner */
+.shared-banner{background:var(--grnl);border:.5px solid #9FE1CB;border-radius:var(--rsm);padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--grn)}
+.shared-banner img{height:44px;border-radius:6px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="htitle">📋 おたより管理</div>
+    <div class="hbadge" id="pbadge">3枚</div>
+  </div>
+  <div class="content">
+
+    <!-- HOME -->
+    <div id="sec-home" class="section active">
+      <div class="tcard">
+        <div class="tdate" id="tdate"></div>
+        <div class="thead2">今日の確認事項</div>
+        <div id="titems"></div>
+      </div>
+      <div id="shared-preview"></div>
+
+      <!-- Galaxy共有メインUI -->
+      <div class="share-hero">
+        <div class="share-icon-wrap">📤</div>
+        <div class="share-title">Galaxyから「共有」で送れます</div>
+        <div class="share-desc">ギャラリーでプリントを開き、共有ボタンを押して「おたより管理」を選ぶだけ。AIが表・文章を読み取って自動で整理します。</div>
+        <div class="steps-mini">
+          <div class="step-mini"><div class="step-num">1</div>Galaxyギャラリーでプリントを開く</div>
+          <div class="step-mini"><div class="step-num">2</div>共有ボタン（⋮）→「おたより管理」を選ぶ</div>
+          <div class="step-mini"><div class="step-num">3</div>AIが自動で読み取り・整理・登録</div>
+        </div>
+        <button class="btn-p" onclick="document.getElementById('finput').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          写真を選んで試す（共有の代わりに）
+        </button>
+        <button class="btn-s" onclick="runDemo()">📄 サンプルで動作確認する</button>
+      </div>
+      <input type="file" id="finput" accept="image/*" onchange="handleFile(this)">
+
+      <div class="slabel">最近のおたより</div>
+      <div id="rprints"></div>
+    </div>
+
+    <!-- SEARCH -->
+    <div id="sec-search" class="section">
+      <div class="swrap">
+        <svg class="sicon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input class="sinput" id="sq" type="text" placeholder="持ち物・行事名・科目など…" oninput="doSearch(this.value)">
+      </div>
+      <div class="frow">
+        <button class="fbtn on" onclick="setF('all',this)">すべて</button>
+        <button class="fbtn" onclick="setF('event',this)">行事</button>
+        <button class="fbtn" onclick="setF('deadline',this)">締め切り</button>
+        <button class="fbtn" onclick="setF('payment',this)">集金</button>
+        <button class="fbtn" onclick="setF('schedule',this)">時間割り</button>
+      </div>
+      <div id="sresults"></div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="sec-cal" class="section">
+      <div class="calcard">
+        <div class="calhead">
+          <button class="calnav" onclick="chMonth(-1)">◀</button>
+          <div class="calmonth" id="calmonth"></div>
+          <button class="calnav" onclick="chMonth(1)">▶</button>
+        </div>
+        <div class="calgrid" id="caldows"></div>
+        <div class="calgrid" id="caldays"></div>
+      </div>
+      <a class="gclink" href="#" onclick="openGcal(event)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Googleカレンダーに追加
+      </a>
+      <div class="slabel" style="margin-top:14px">今後の予定</div>
+      <div id="evlist"></div>
+    </div>
+
+    <!-- ASK AI -->
+    <div id="sec-ask" class="section">
+      <div class="chiprow">
+        <button class="chip" onclick="askQ('明日の持ち物は？')">明日の持ち物は？</button>
+        <button class="chip" onclick="askQ('明日の時間割は？')">明日の時間割は？</button>
+        <button class="chip" onclick="askQ('今月の締め切りは？')">今月の締め切りは？</button>
+        <button class="chip" onclick="askQ('集金の残りは？')">集金の残りは？</button>
+        <button class="chip" onclick="askQ('来週の予定を教えて')">来週の予定は？</button>
+        <button class="chip" onclick="askQ('運動会の持ち物は？')">運動会の持ち物は？</button>
+      </div>
+      <div class="cwrap">
+        <div class="cmsgs" id="cmsgs"></div>
+        <div id="cprev"></div>
+        <div class="cbot">
+          <input type="file" id="cfinput" accept="image/*" onchange="handleChatImg(this)">
+          <button class="imgbtn" onclick="document.getElementById('cfinput').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </button>
+          <textarea class="cinput" id="cin" rows="1" placeholder="質問を入力、または📷で写真を送る…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}" oninput="ar(this)"></textarea>
+          <button class="sndbtn" onclick="sendChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="sec-settings" class="section">
+      <div class="slabel">家族共有</div>
+      <div class="card" style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:12px;padding:4px 0 10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--acc);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">自</div>
+          <div><div style="font-size:13px;font-weight:700">あなた（管理者）</div><div style="font-size:11px;color:var(--ink3)">登録・編集・AI質問すべて</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;border-top:.5px solid var(--sur2);padding:10px 0 4px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--grn);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">P</div>
+          <div><div style="font-size:13px;font-weight:700">パートナー</div><div style="font-size:11px;color:var(--ink3)">閲覧・AI質問</div></div>
+          <button style="margin-left:auto;padding:6px 12px;background:var(--acc);color:white;border:none;border-radius:var(--rful);font-size:11px;font-weight:700;font-family:inherit;cursor:pointer">招待する</button>
+        </div>
+      </div>
+      <div class="slabel">AI・読み取り</div>
+      <div class="card">
+        <div class="srow"><div><div class="slbl">Galaxyギャラリーから共有で登録</div><div class="ssub">共有→アプリ選択→AI自動抽出</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="srow"><div><div class="slbl">表・時間割りのAI読み取り</div><div class="ssub">行・列を正確に把握して登録</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="srow"><div><div class="slbl">訂正の自動検出</div><div class="ssub">変更プリントを検知して確認</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+      <div class="slabel">通知</div>
+      <div class="card">
+        <div class="srow"><div><div class="slbl">締め切り前日通知</div><div class="ssub">前日夜9時にリマインダー</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="srow"><div><div class="slbl">集金日の朝通知</div><div class="ssub">集金日の朝7時にアラート</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="srow"><div><div class="slbl">時間割り前日通知</div><div class="ssub">「明日は体育があります」</div></div><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+        <div class="srow"><div><div class="slbl">Googleカレンダー連携</div><div class="ssub">行事・締め切りを自動追加</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nbtn active" id="nh" onclick="showTab('home',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>ホーム
+    </button>
+    <button class="nbtn" id="ns" onclick="showTab('search',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>検索
+    </button>
+    <button class="nbtn" id="nc" onclick="showTab('cal',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>カレンダー
+    </button>
+    <button class="nbtn" id="na" onclick="showTab('ask',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>AIに聞く
+    </button>
+    <button class="nbtn" id="nset" onclick="showTab('settings',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>設定
+    </button>
+  </div>
+</div>
+
+<!-- Processing -->
+<div class="proc" id="proc">
+  <div class="spin"></div>
+  <div class="ptitle">AIが読み取り中…</div>
+  <div class="psteps">
+    <div class="pstep" id="ps1">📷 画像を認識中</div>
+    <div class="pstep" id="ps2">📊 表・文章を解析中</div>
+    <div class="pstep" id="ps3">🗂 行事・締め切り・集金を抽出中</div>
+    <div class="pstep" id="ps4">✅ 登録データを整理中</div>
+  </div>
+</div>
+
+<!-- Result panel -->
+<div class="rpanel" id="rpanel">
+  <div class="rhandle"></div>
+  <div class="rbody" id="rbody"></div>
+</div>
+
+<script>
+const DOW=['日','月','火','水','木','金','土'];
+const now=new Date();
+const schedMap={1:'体育・算数・国語・図工・理科・道徳',2:'国語・算数・音楽・体育・生活・道徳',3:'算数・国語・理科・社会・図工',4:'国語・体育・算数・理科・音楽',5:'算数・国語・社会・体育・図工・学活'};
+const tagCls={event:'tag-event',deadline:'tag-deadline',payment:'tag-payment',notice:'tag-notice',schedule:'tag-schedule'};
+const tagLbl={event:'行事',deadline:'締め切り',payment:'集金',notice:'お知らせ',schedule:'時間割り'};
+
+let prints=[
+  {id:1,title:'10月 学級通信',emoji:'📰',types:['event','deadline','payment','notice'],date:'2024-09-28',summary:'運動会・遠足・保護者懇談会のお知らせ。締め切り・集金が複数あります。',items:[
+    {type:'event',main:'運動会',detail:'10月12日（土）8:30〜 グラウンド',stuff:'お弁当・水筒・帽子・レジャーシート'},
+    {type:'deadline',main:'運動会参加申込',detail:'9月30日（月）まで'},
+    {type:'payment',main:'遠足費用 1,500円',detail:'10月10日（木）担任へ封筒で'},
+    {type:'notice',main:'保護者懇談会',detail:'10月18日（金）14:00〜 各教室'},
+  ]},
+  {id:2,title:'時間割り表（10月）',emoji:'📅',types:['schedule'],date:'2024-09-25',summary:'10月の週間時間割り。月・火・木・金に体育あり。',items:[
+    {type:'schedule',main:'月曜',detail:'体育・算数・国語・図工・理科・道徳'},
+    {type:'schedule',main:'火曜',detail:'国語・算数・音楽・体育・生活・道徳'},
+    {type:'schedule',main:'水曜',detail:'算数・国語・理科・社会・図工'},
+    {type:'schedule',main:'木曜',detail:'国語・体育・算数・理科・音楽'},
+    {type:'schedule',main:'金曜',detail:'算数・国語・社会・体育・図工・学活'},
+  ]},
+  {id:3,title:'給食費集金のお知らせ',emoji:'💰',types:['payment','deadline'],date:'2024-09-20',summary:'10月分給食費4,200円を10月1日に集金袋で集金。',items:[
+    {type:'payment',main:'給食費 4,200円',detail:'10月1日（火）集金袋にて'},
+    {type:'deadline',main:'給食費集金',detail:'10月1日（火）'},
+  ]},
+];
+
+const events=[
+  {date:'10/1',name:'給食費集金',type:'deadline',day:1},
+  {date:'10/10',name:'遠足費用集金 締め切り',type:'deadline',day:10},
+  {date:'10/12',name:'運動会 🏃',type:'event',day:12},
+  {date:'10/18',name:'保護者懇談会',type:'event',day:18},
+  {date:'10/25',name:'遠足 🚌',type:'event',day:25},
+];
+
+// ナビ
+function showTab(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='search')doSearch('');
+  if(id==='cal')renderCal();
+}
+
+// 今日カード
+(function(){
+  document.getElementById('tdate').textContent=`${now.getMonth()+1}月${now.getDate()}日（${DOW[now.getDay()]}）`;
+  const tmr=(now.getDay()+1)%7;
+  const items=[];
+  if(schedMap[now.getDay()]) items.push({icon:'📚',text:'今日の時間割：'+schedMap[now.getDay()]});
+  const stuff=schedMap[tmr]&&schedMap[tmr].includes('体育')?'体育着・上履き（体育あり）':'通常の持ち物';
+  items.push({icon:'🎒',text:`明日（${DOW[tmr]}）の持ち物：${stuff}`});
+  items.push({icon:'⏰',text:'締め切りまで：遠足費用 あと12日'});
+  document.getElementById('titems').innerHTML=items.map(i=>`<div class="titem"><span>${i.icon}</span><span>${i.text}</span></div>`).join('');
+})();
+
+// 最近のプリント
+function renderPrints(){
+  document.getElementById('pbadge').textContent=prints.length+'枚';
+  document.getElementById('rprints').innerHTML=prints.map(p=>`
+    <div class="csm" onclick="openPrint(${p.id})">
+      <div class="prow">
+        <div class="pthumb">${p.emoji}</div>
+        <div class="pinfo">
+          <div class="ptitletext">${p.title}</div>
+          <div class="pdate">${p.date}</div>
+          <div class="trow">${p.types.map(t=>`<span class="tag ${tagCls[t]}">${tagLbl[t]}</span>`).join('')}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+renderPrints();
+
+function openPrint(id){
+  const p=prints.find(x=>x.id===id);
+  showTab('ask',document.getElementById('na'));
+  setTimeout(()=>askQ(`「${p.title}」について詳しく教えて`),200);
+}
+
+// ファイル選択（共有の代替）
+function handleFile(input){
+  if(!input.files||!input.files[0])return;
+  const file=input.files[0];
+  input.value='';
+  // プレビュー表示
+  const url=URL.createObjectURL(file);
+  document.getElementById('shared-preview').innerHTML=`
+    <div class="shared-banner">
+      <img src="${url}" alt="選択された画像">
+      <div style="flex:1"><div style="font-weight:700;margin-bottom:2px">写真を受け取りました</div><div style="opacity:.8">AIで読み取り中…</div></div>
+    </div>`;
+  startProc(file);
+}
+
+// Galaxyギャラリーからの共有を受け取る（Web Share Target API）
+// ホーム画面に追加した場合に機能する
+if('serviceWorker' in navigator){
+  const url=new URL(location.href);
+  // 共有で渡ってきた画像があれば処理
+  if(url.searchParams.get('shared')==='1'){
+    // 実際のShare Target実装はmanifest.jsonとSWが必要
+    // このデモでは通常のファイル選択にフォールバック
+  }
+}
+
+function runDemo(){startProc(null);}
+
+function startProc(file){
+  const proc=document.getElementById('proc');
+  proc.classList.add('show');
+  const steps=['ps1','ps2','ps3','ps4'];
+  steps.forEach(s=>document.getElementById(s).className='pstep');
+  let i=0;
+  function next(){
+    if(i>0) document.getElementById(steps[i-1]).className='pstep done';
+    if(i<steps.length){document.getElementById(steps[i]).className='pstep active';i++;setTimeout(next,900);}
+    else{setTimeout(()=>{document.getElementById(steps[3]).className='pstep done';proc.classList.remove('show');
+      if(file) analyzeImage(file); else showDemo();},500);}
+  }
+  next();
+}
+
+async function analyzeImage(file){
+  const b64=await f2b64(file);
+  const mt=file.type||'image/jpeg';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mt,data:b64}},
+          {type:'text',text:`この学校のプリントを読み取ってください。表がある場合は行・列の対応を正確に読み取り、時間割りなら曜日×時限の対応を維持してください。
+以下のJSON形式のみで返してください（説明・コードブロック不要）：
+{"title":"プリントタイトル","summary":"主旨を2〜3文で要約","items":[{"type":"event|deadline|payment|notice|schedule","main":"内容","detail":"日時・金額・場所など"}]}`}
+        ]}]})
+    });
+    const data=await res.json();
+    const text=data.content.map(c=>c.text||'').join('');
+    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+    showResult(parsed);
+  }catch(e){console.error(e);showDemo();}
+}
+
+function showDemo(){
+  showResult({
+    title:'10月 学級通信（サンプル）',
+    summary:'運動会・遠足・保護者懇談会のお知らせです。遠足費用1,500円と懇談会出欠の締め切りはいずれも10月10日です。',
+    items:[
+      {type:'event',main:'運動会',detail:'10月12日（土）8:30〜 グラウンド'},
+      {type:'deadline',main:'運動会参加申込',detail:'9月30日（月）まで'},
+      {type:'payment',main:'遠足費用 1,500円',detail:'10月10日（木）封筒で担任へ'},
+      {type:'notice',main:'保護者懇談会',detail:'10月18日（金）14:00〜 各教室'},
+    ]
+  });
+}
+
+function showResult(data){
+  const types=[...new Set(data.items.map(i=>i.type))];
+  document.getElementById('rbody').innerHTML=`
+    <div class="rok">✅ AI読み取り完了！</div>
+    <div class="rsub">${data.items.length}件の情報を抽出しました</div>
+    <div class="sumbox">
+      <div class="sumtitle">📝 プリントの要約</div>
+      <div class="sumtext">${escH(data.summary||'')}</div>
+    </div>
+    <div class="exlist">${data.items.map(it=>`
+      <div class="exitem">
+        <span class="exbadge ${tagCls[it.type]||'tag-notice'}">${tagLbl[it.type]||'情報'}</span>
+        <div><div class="exmain">${escH(it.main)}</div><div class="exdetail">${escH(it.detail||'')}</div></div>
+      </div>`).join('')}
+    </div>
+    <button class="btn-p" onclick="saveResult('${escH(data.title)}','${types.join(',')}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      カレンダーと一覧に登録する
+    </button>
+    <button onclick="closePanel()" style="width:100%;padding:10px;background:none;border:none;color:var(--ink3);font-size:13px;font-family:inherit;cursor:pointer">閉じる</button>`;
+  document.getElementById('rpanel').classList.add('show');
+}
+
+function saveResult(title,typesStr){
+  prints.unshift({id:Date.now(),title,emoji:'📄',types:typesStr.split(','),date:new Date().toISOString().slice(0,10),summary:'',items:[]});
+  renderPrints();
+  document.getElementById('shared-preview').innerHTML='';
+  document.getElementById('rbody').innerHTML=`<div style="text-align:center;padding:28px 16px">
+    <div style="font-size:40px;margin-bottom:12px">🎉</div>
+    <div style="font-size:16px;font-weight:700;color:var(--grn);margin-bottom:6px">登録しました！</div>
+    <div style="font-size:12px;color:var(--ink2);margin-bottom:20px">カレンダーとパートナーさんにも共有されました</div>
+    <button class="btn-p" onclick="closePanel()">閉じる</button></div>`;
+}
+
+function closePanel(){document.getElementById('rpanel').classList.remove('show');}
+
+// チャット画像
+let pendImg=null;
+function handleChatImg(input){
+  if(!input.files||!input.files[0])return;
+  const file=input.files[0];input.value='';
+  const url=URL.createObjectURL(file);
+  pendImg={file,url};
+  document.getElementById('cprev').innerHTML=`<div class="imgprev">
+    <img src="${url}" alt="添付"><button class="iclose" onclick="clearImg()">×</button></div>`;
+}
+function clearImg(){pendImg=null;document.getElementById('cprev').innerHTML='';}
+
+// AIチャット
+const hist=[];
+function addMsg(text,role,imgUrl){
+  const c=document.getElementById('cmsgs');
+  const d=document.createElement('div');d.className=`msg ${role}`;
+  if(role==='ai') d.innerHTML=`<div class="ainame">AI アシスタント</div>${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}`;
+  else if(imgUrl) d.innerHTML=`<img src="${imgUrl}" style="max-width:100%;border-radius:8px;display:block;margin-bottom:${text?6:0}px">${text?`<span>${escH(text)}</span>`:''}`;
+  else d.textContent=text;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function showTyping(){
+  const c=document.getElementById('cmsgs');
+  const d=document.createElement('div');d.className='msg ai';d.id='typing';
+  d.innerHTML=`<div class="ainame">AI アシスタント</div><div class="tdots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+
+async function sendChat(){
+  const inp=document.getElementById('cin');
+  const q=inp.value.trim();
+  const img=pendImg;
+  if(!q&&!img)return;
+  inp.value='';ar(inp);
+  addMsg(q,'user',img?img.url:null);
+  document.getElementById('cprev').innerHTML='';
+  pendImg=null;
+
+  showTyping();
+  const uc=[];
+  if(img){const b64=await f2b64(img.file);uc.push({type:'image',source:{type:'base64',media_type:img.file.type||'image/jpeg',data:b64}});URL.revokeObjectURL(img.url);}
+  if(q) uc.push({type:'text',text:q});
+
+  const sys=`あなたは小学生の保護者をサポートするAIアシスタントです。
+登録済みプリント情報：
+${prints.map(p=>`【${p.title}】${p.summary} ${p.items.map(i=>`${tagLbl[i.type]}:${i.main}(${i.detail||''})`).join('、')}`).join('\n')}
+今日：${now.getMonth()+1}月${now.getDate()}日（${DOW[now.getDay()]}）
+明日（${DOW[(now.getDay()+1)%7]}）の時間割：${schedMap[(now.getDay()+1)%7]||'不明'}
+写真が送られた場合は表・文章を正確に読み取り、特に時間割りは行・列の対応を正確に把握して答えてください。`;
+
+  hist.push({role:'user',content:uc.length===1&&!img?q:uc});
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:hist})
+    });
+    const data=await res.json();
+    const reply=data.content.map(c=>c.text||'').join('');
+    const t=document.getElementById('typing');if(t)t.remove();
+    hist.push({role:'assistant',content:reply});
+    addMsg(reply,'ai');
+  }catch(e){
+    const t=document.getElementById('typing');if(t)t.remove();
+    addMsg(fallback(q),'ai');
+  }
+}
+
+function askQ(q){document.getElementById('cin').value=q;sendChat();}
+
+function fallback(q){
+  const KB={'明日の持ち物':`明日（${DOW[(now.getDay()+1)%7]}）の持ち物：\n${schedMap[(now.getDay()+1)%7]&&schedMap[(now.getDay()+1)%7].includes('体育')?'体育着・上履き（体育あり）':'通常の持ち物'}`,'締め切り':'今月の締め切り：\n🔴 10月1日 給食費4,200円\n🔴 10月10日 遠足費用1,500円','集金':'集金：\n💰 給食費4,200円 → 10/1\n💰 遠足費用1,500円 → 10/10','運動会':'運動会は10月12日（土）8:30〜グラウンド。\n持ち物：お弁当・水筒・帽子・レジャーシート','来週':'来週：\n🔴 10/10 遠足費用締め切り\n🏃 10/12 運動会','時間割':'明日（'+DOW[(now.getDay()+1)%7]+'）：'+(schedMap[(now.getDay()+1)%7]||'不明')};
+  for(const[k,v]of Object.entries(KB)){if(q&&q.includes(k))return v;}
+  return `「${q||'その内容'}」について確認しました。写真を送っていただくとさらに詳しくお答えできます。`;
+}
+
+function ar(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,80)+'px';}
+async function f2b64(file){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.onerror=j;fr.readAsDataURL(file);});}
+function escH(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// 検索
+let af='all';
+function setF(f,btn){af=f;document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');doSearch(document.getElementById('sq').value);}
+function doSearch(q){
+  const res=document.getElementById('sresults');
+  const f=prints.filter(p=>{
+    const mq=!q||p.title.includes(q)||p.items.some(i=>i.main.includes(q)||(i.detail||'').includes(q));
+    const mf=af==='all'||p.types.includes(af);
+    return mq&&mf;
+  });
+  if(!f.length){res.innerHTML=`<div class="empty"><div style="font-size:32px;margin-bottom:10px">🔍</div>該当するおたよりが見つかりません</div>`;return;}
+  res.innerHTML=f.map(p=>`<div class="csm" onclick="openPrint(${p.id})">
+    <div class="prow"><div class="pthumb">${p.emoji}</div>
+    <div class="pinfo"><div class="ptitletext">${p.title}</div><div class="pdate">${p.date}</div>
+    <div class="trow">${p.types.map(t=>`<span class="tag ${tagCls[t]||'tag-notice'}">${tagLbl[t]||'情報'}</span>`).join('')}</div></div></div></div>`).join('');
+}
+
+// カレンダー
+let cy=2024,cm=9;
+function renderCal(){
+  document.getElementById('calmonth').textContent=`${cy}年${cm+1}月`;
+  document.getElementById('caldows').innerHTML=DOW.map(d=>`<div class="caldow">${d}</div>`).join('');
+  const first=new Date(cy,cm,1).getDay(),days=new Date(cy,cm+1,0).getDate();
+  const em={1:'deadline',10:'deadline',12:'event',18:'event',25:'event'};
+  let h='';
+  for(let i=0;i<first;i++)h+=`<div></div>`;
+  for(let d=1;d<=days;d++){
+    const t=em[d],isT=cy===now.getFullYear()&&cm===now.getMonth()&&d===now.getDate();
+    h+=`<div class="calday${isT?' today':''}">${d}${t?`<span class="evdot ${t}"></span>`:''}`;
+    h+=`</div>`;
+  }
+  document.getElementById('caldays').innerHTML=h;
+  document.getElementById('evlist').innerHTML=events.map(e=>`
+    <div class="evitem">
+      <div class="evdotlg" style="background:${e.type==='deadline'?'var(--red)':'var(--acc)'}"></div>
+      <div><div class="evdates">${e.date}</div><div class="evname">${e.name}</div></div>
+    </div>`).join('');
+}
+function chMonth(d){cm+=d;if(cm>11){cm=0;cy++;}if(cm<0){cm=11;cy--;}renderCal();}
+function openGcal(e){e.preventDefault();alert('Googleカレンダー連携：\n登録済みの行事・締め切りが自動で追加されます。');}
+
+// 初期化
+addMsg('こんにちは！\n\nGalaxyギャラリーから「共有」→「おたより管理」でプリントを送ると、AIが表・文章を読み取って自動で整理します。\n\n📷ボタンから写真を送って「この時間割りを読み取って」と聞くことも できます。','ai');
+doSearch('');renderCal();
+</script>
+</body>
+</html>
